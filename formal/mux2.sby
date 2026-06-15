@@ -1,0 +1,18 @@
+# SymbiYosys script: formally check mux2's assertions.
+
+[options]
+mode bmc      # bounded model check: search for an input that violates an assert
+depth 1       # mux2 is combinational (no clock/state), so 1 time step is enough
+
+[engines]
+smtbmc        # use an SMT solver as the proof engine
+
+[script]
+# Yosys reads both files in "formal" mode (so it keeps the assertions).
+read -formal mux2.v
+read -formal mux2_formal.sv
+prep -top mux2_formal   # elaborate, with mux2_formal as the top module
+
+[files]
+../rtl/mux2.v
+mux2_formal.sv

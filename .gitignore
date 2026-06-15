@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# EDA build artifacts
+sim/*.vvp
+*.vcd
+formal/*/
