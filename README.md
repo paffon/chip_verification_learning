@@ -1,5 +1,16 @@
 # chip_verification_learning
 
+**The end goal:** an LLM that writes a hardware assertion, *runs it against real
+verification tools*, reads its own failures, and rewrites until the property is proven —
+a closed correctness loop with no human in it.
+
+```mermaid
+flowchart LR
+    G[LLM generates SVA] --> V[Verify with real tools]
+    V -- fail --> G
+    V -- pass --> D[Verified assertion]
+```
+
 A learning-first project building toward a closed-loop, agentic system that uses an
 LLM to **generate SystemVerilog Assertions (SVAs)** and then **verifies them with real
 open-source EDA tools**, benchmarked in the spirit of NVIDIA's
@@ -15,16 +26,16 @@ concept, in order, with takeaways — lives in [`LEARNING.md`](LEARNING.md).
 
 ## Where I am right now
 
-**✅ M1 complete** (last updated 2026-06-16).
+**M1 complete** (last updated 2026-06-16).
 
 | Milestone | Status | What it covers |
 |---|---|---|
-| **M0** — Foundations & toolchain | ✅ done | RTL basics, simulation vs formal, first proven SVA, counterexample (DUT: `mux2`) |
-| **M1** — Hand-written assertions on a stateful DUT | ✅ done | clocked logic & reset, `assert`/`assume`/`cover`, safety vs liveness, BMC depth, counterexample + cover witness, **vacuity** (DUT: `fifo_ctrl`) |
-| **M2** — The LLM generation loop | ⬜ next | generate SVAs from spec/RTL → check syntax → simulate/prove → feed failures back |
-| **M3** — Benchmark vs FVEval NL2SVA | ⬜ | valid % / pass % / injected-bug-catch % vs a one-shot baseline |
-| **M4** — Differentiation | ⬜ | MCP tool server; generator/critic/oracle multi-agent; optional security properties |
-| **M5** — GitHub polish | ⬜ | final README with metrics + honest limitations |
+| **M0** — Foundations & toolchain | done | RTL basics, simulation vs formal, first proven SVA, counterexample (DUT: `mux2`) |
+| **M1** — Hand-written assertions on a stateful DUT | done | clocked logic & reset, `assert`/`assume`/`cover`, safety vs liveness, BMC depth, counterexample + cover witness, **vacuity** (DUT: `fifo_ctrl`) |
+| **M2** — The LLM generation loop | next | generate SVAs from spec/RTL → check syntax → simulate/prove → feed failures back |
+| **M3** — Benchmark vs FVEval NL2SVA | planned | valid % / pass % / injected-bug-catch % vs a one-shot baseline |
+| **M4** — Differentiation | planned | MCP tool server; generator/critic/oracle multi-agent; optional security properties |
+| **M5** — GitHub polish | planned | final README with metrics + honest limitations |
 
 **To resume from here:** start M2. The M1 formal flow (`fifo_ctrl`) is the working
 *oracle* the generation loop will call. See the "Next" note at the bottom of
