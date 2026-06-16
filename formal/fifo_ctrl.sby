@@ -1,0 +1,25 @@
+# SymbiYosys script: formally check fifo_ctrl.
+# Two tasks: `bmc` proves the safety assertions; `cover` proves reachability.
+# Run both:  sby -f fifo_ctrl.sby
+# Run one:   sby -f fifo_ctrl.sby bmc
+
+[tasks]
+bmc
+cover
+
+[options]
+depth 10
+bmc:   mode bmc
+cover: mode cover
+
+[engines]
+smtbmc
+
+[script]
+read -formal fifo_ctrl.v
+read -formal fifo_ctrl_formal.sv
+prep -top fifo_ctrl_formal
+
+[files]
+../rtl/fifo_ctrl.v
+fifo_ctrl_formal.sv

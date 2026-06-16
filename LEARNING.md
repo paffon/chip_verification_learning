@@ -67,3 +67,73 @@ Doubles as study notes and raw material for the final README.
 **M0 COMPLETE:** toolchain verified; built + simulated + formally proved a module;
 saw a counterexample. Next: M1 — a real DUT (FIFO/arbiter), assert/assume/cover,
 safety vs liveness, clocked assertions.
+
+---
+
+## M1 — Hand-written assertions on a stateful DUT
+
+DUT: `rtl/fifo_ctrl.v` — a synchronous depth-4 FIFO *controller* (tracks occupancy
+`count` only, no data payload). All the interesting properties live in the control
+logic, and ignoring the payload keeps the formal state space tiny. Wrapper +
+properties in `formal/fifo_ctrl_formal.sv`; two-task `.sby` in `formal/fifo_ctrl.sby`.
+
+### Concept 5 — State: clocked sequential logic
+- M0 was **combinational** (output = f(inputs now)). Real chips **remember**.
+- A **flip-flop** is a 1-bit register; it updates only on the **clock edge**
+  (`always @(posedge clk)`). Between edges it holds. That memory *is* "state".
+- `reg` in RTL = real hardware state (a flop), distinct from the testbench `reg` of M0.
+- `<=` (non-blocking): sample all RHS using *old* values, update all flops together
+  at the edge — models parallel flop update. (`=` was the combinational M0 form.)
+- **Reset** pins down cycle 0: with no init, a flop powers up as `X` (unknown), so
+  formal would start from garbage states. `if (rst) count <= 0;` gives a known start.
+
+### Concept 6 — Safety vs liveness
+- **Safety** = "nothing bad ever happens" — violated by a *finite* trace (point to the
+  cycle). E.g. `count` never exceeds 4. **BMC checks exactly this.**
+- **Liveness** = "something good eventually happens" — violated only by an *infinite*
+  trace that stalls forever. BMC (finite unrolling) *cannot* refute liveness alone;
+  needs k-induction / fairness. M1 stays in safety; open-tool liveness is thin.
+
+### Concept 7 — Clocked assertions in the open-tool subset
+- Open Yosys supports **immediate** assertions inside procedural blocks, NOT full
+  concurrent SVA (`assert property (@(posedge clk) ...)`, `|->`, `$past`). That needs
+  a commercial front-end (Verific → JasperGold/VC Formal). **Honest limitation.**
+- Idiom: sample on the clock with `always @(posedge clk)`; `if (!rst) assert(...)` is
+  our hand-written `disable iff (rst)`. Temporal "after X" properties: build the
+  history yourself with a 1-cycle flop (what `$past` compiles to anyway).
+
+### Concept 8 — BMC depth
+- `mode bmc depth N` unrolls the circuit N cycles and searches for a violating input
+  sequence within them. A bug needing >N cycles is **missed → false PASS**. Set depth
+  to the design's timescale. A clean BMC is *evidence*, not an unbounded proof
+  (`mode prove` / k-induction gives all-time; deferred).
+
+### Concept 9 — assert / assume, and the counterexample
+- Built a **trusting** controller (`count <= count + wr - rd`, no self-protection).
+- `assert (count <= 4)` → **FAIL** at once. The dumped counterexample (`trace_tb.v` is
+  a runnable testbench) showed **underflow**: one `rd` while `empty` → `0 - 1` wraps to
+  `3'b111 = 7 > 4`. The solver returns the *shortest* counterexample (1 read), not the
+  overflow we expected (5 writes). Free uninit values in a trace (`count = 6` at init)
+  are solver don't-cares — reset overwrote it.
+- **`assume (P)`**: prune the input space to inputs satisfying P — models a well-behaved
+  environment. We assumed `if (full) !wr` and `if (empty) !rd` (the usage contract).
+  Same assertion then **PASSED**. Key caveat: an assume is a promise you do NOT check
+  here; if the real environment breaks it, the proof guarantees nothing.
+
+### Concept 10 — cover & vacuity
+- **`cover (P)`** is the dual of assert: assert succeeds by finding *no* bad trace;
+  cover succeeds by *finding* a trace that reaches P (witness dumped). Ran as a separate
+  `mode cover` task. `cover (full)` reached at step 6 → the FIFO genuinely can fill.
+- **Vacuity**: an assertion that PASSES only because the situations testing it are
+  unreachable (usually over-strong assumes). Demonstrated: adding `if (count==3) !wr`
+  made `count <= 4` still PASS — but on a FIFO that can never reach 4. The `cover (full)`
+  task then **FAILED** (unreached), exposing the hollow PASS. **Lesson: pair every
+  assert with covers proving the interesting states stay reachable. A passing assert
+  suite with failing covers is a red flag, not success.**
+- Two distinct failure modes seen: a *false* property → counterexample; a *true*
+  property proved *vacuously* → meaningless PASS.
+
+**M1 COMPLETE:** stateful DUT; assert/assume/cover; safety vs liveness; BMC depth;
+read a counterexample and a cover witness; induced and caught vacuity. Open-tool SVA
+limits documented. Next: M2 — the LLM generation loop (generate SVAs, check syntax,
+simulate/prove, feed failures back).
