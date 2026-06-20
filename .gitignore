@@ -217,6 +217,10 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Local agent/session config — not part of the public deliverable
+CLAUDE.md
+.claude/
+
 # EDA build artifacts
 sim/*.vvp
 *.vcd
