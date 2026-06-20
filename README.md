@@ -62,15 +62,18 @@ Yosys 0.66, sby 0.66, Verilator 5.049, Icarus 14.0. Full setup notes are in
 
 ## Reproduce the current results
 
-From the Windows host (PowerShell), or natively from a Linux shell with the OSS CAD
-Suite on `PATH`:
+Run from a shell with the OSS CAD Suite on `PATH` (a WSL/Linux shell, or native
+Linux). On Windows: open `wsl`, `cd` into the repo, then run the commands below.
 
-```powershell
+```bash
+# from the repo root
+cd formal
+
 # M0 — prove the combinational mux2 contract
-wsl -e bash -lc "cd /mnt/c/Users/paffo/Documents/Projects/chip_verification_learning/formal && sby -f mux2.sby"
+sby -f mux2.sby
 
 # M1 — FIFO controller: safety proof + reachability cover (two tasks)
-wsl -e bash -lc "cd /mnt/c/Users/paffo/Documents/Projects/chip_verification_learning/formal && sby -f fifo_ctrl.sby"
+sby -f fifo_ctrl.sby
 ```
 
 Expected for `fifo_ctrl.sby`: task `bmc` → `DONE (PASS)` (safety holds), task `cover`
